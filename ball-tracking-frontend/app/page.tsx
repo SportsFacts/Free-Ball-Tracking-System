@@ -1,5 +1,6 @@
-import BallTrackingApp from "@/components/BallTrackingApp";
+import BallTrackingApp from "../components/BallTrackingApp";
 
 export default function Page() {
   return <BallTrackingApp />;
 }
+
