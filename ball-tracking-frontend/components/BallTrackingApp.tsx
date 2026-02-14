@@ -83,10 +83,11 @@ export default function BallTrackingApp() {
           </div>
         )}
       </div>
-    </div>
-  );
-<div className="bg-red-500 text-white p-10">
+    </div> 
+    <div className="bg-red-500 text-white p-10">
   Tailwind Test
 </div>
+  );
+
 
 }
