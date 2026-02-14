@@ -1,20 +1,13 @@
-.result-btn {
-  @apply py-3 rounded-xl border border-cyan-500/30 
-         hover:border-cyan-400 
-         hover:shadow-[0_0_20px_rgba(0,255,255,0.4)]
-         transition-all;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-.result-btn.reset {
-  @apply border-red-500/40 hover:border-red-400
-         hover:shadow-[0_0_20px_rgba(239,68,68,0.5)];
-}
+/* Optional but recommended */
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.4s ease-out;
+html, body {
+  padding: 0;
+  margin: 0;
+  background: black;
+  color: white;
+  font-family: sans-serif;
 }
