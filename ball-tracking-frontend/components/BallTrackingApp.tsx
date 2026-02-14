@@ -86,3 +86,6 @@ export default function BallTrackingApp() {
     </div>
   );
 }
+<div className="bg-red-500 p-10">
+  TEST
+</div>
