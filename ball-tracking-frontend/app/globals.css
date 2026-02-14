@@ -3,6 +3,6 @@
 @tailwind utilities;
 
 html, body {
-  background: black;
-  color: white;   /* ✅ THIS FIXES EVERYTHING */
+  background-color: black;
+  color: white;
 }
