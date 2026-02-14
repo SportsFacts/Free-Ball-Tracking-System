@@ -2,8 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Optional global styling */
-
 html, body {
   background: black;
+  color: white;   /* ✅ THIS FIXES EVERYTHING */
 }
