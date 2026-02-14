@@ -2,12 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Optional but recommended */
+/* Optional global styling */
 
 html, body {
-  padding: 0;
-  margin: 0;
   background: black;
-  color: white;
-  font-family: sans-serif;
 }
