@@ -20,6 +20,7 @@ export default function BallTrackingApp() {
   const resetSession = () => {
     setStep("intro");
     setDecision(null);
+    setProcessing(false);
   };
 
   const screen = {
@@ -31,14 +32,14 @@ export default function BallTrackingApp() {
   return (
     <div className="min-h-screen text-white bg-black relative overflow-hidden">
 
-      {/* TECH BACKGROUND */}
-      <div className="absolute inset-0 opacity-20">
+      {/* BACKGROUND (NO CLICK BLOCKING) */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle,_#00ffff22,_transparent)]" />
       </div>
 
       <AnimatePresence mode="wait">
 
-        {/* INTRO SCREEN */}
+        {/* INTRO */}
         {step === "intro" && (
           <motion.div
             key="intro"
@@ -153,45 +154,46 @@ export default function BallTrackingApp() {
             animate="visible"
             exit="exit"
             transition={{ duration: 0.4 }}
-            className="max-w-6xl mx-auto p-10 space-y-6"
+            className="max-w-6xl mx-auto p-10"
           >
             <div className="bg-[#050b18] border border-cyan-400/10 rounded-2xl p-12">
 
-              <h2 className="text-2xl text-cyan-400 mb-6">
+              <h2 className="text-3xl text-cyan-400 mb-8">
                 Original Decision
               </h2>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
 
+                {/* OUT → RED */}
                 <button
                   onClick={() => setDecision("out")}
-                  className={`py-4 rounded-lg border transition-all duration-300 ${
+                  className={`py-5 rounded-xl border transition text-lg ${
                     decision === "out"
-                      ? "border-red-500 bg-red-500/10 text-red-400 shadow-[0_0_25px_red]"
-                      : "border-gray-700 bg-black text-gray-400"
+                      ? "border-red-500 bg-red-500/20 shadow-[0_0_25px_red]"
+                      : "border-gray-700"
                   }`}
                 >
                   OUT
                 </button>
 
+                {/* NOT OUT → GREEN */}
                 <button
                   onClick={() => setDecision("not_out")}
-                  className={`py-4 rounded-lg border transition-all duration-300 ${
+                  className={`py-5 rounded-xl border transition text-lg ${
                     decision === "not_out"
-                      ? "border-green-500 bg-green-500/10 text-green-400 shadow-[0_0_25px_green]"
-                      : "border-gray-700 bg-black text-gray-400"
+                      ? "border-green-400 bg-green-400/20 shadow-[0_0_25px_green]"
+                      : "border-gray-700"
                   }`}
                 >
                   NOT OUT
                 </button>
-
               </div>
 
               <button
                 onClick={analyzeDelivery}
-                className="w-full mt-6 py-4 bg-cyan-400 text-black 
-                           rounded-lg font-semibold 
-                           shadow-[0_0_30px_cyan] hover:scale-[1.02] transition"
+                className="w-full mt-8 py-5 bg-cyan-400 text-black 
+                           rounded-xl font-semibold text-lg
+                           shadow-[0_0_35px_cyan] hover:scale-[1.02] transition"
               >
                 ▶ ANALYZE DELIVERY
               </button>
@@ -210,51 +212,27 @@ export default function BallTrackingApp() {
             transition={{ duration: 0.4 }}
             className="max-w-6xl mx-auto p-10 space-y-10"
           >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="bg-[#050b18] border border-cyan-400/30 
-                         rounded-xl p-12 text-center 
-                         shadow-[0_0_40px_#00ffff33]"
-            >
+            <div className="bg-[#050b18] border border-cyan-400/30 
+                            rounded-xl p-12 text-center 
+                            shadow-[0_0_40px_#00ffff33]">
+
               <div className="text-sm text-gray-500 mb-3">
                 HAWK-EYE VERDICT
               </div>
 
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="text-6xl font-bold text-green-400 
-                           drop-shadow-[0_0_25px_green]"
-              >
+              <div className="text-6xl font-bold text-green-400 
+                              drop-shadow-[0_0_25px_green]">
                 OUT
-              </motion.div>
-            </motion.div>
-
-            <div className="grid grid-cols-2 gap-4">
-
-              <button className="py-4 bg-black border border-cyan-400/20 rounded-lg">
-                PREVIEW ORIGINAL
-              </button>
-
-              <button className="py-4 bg-black border border-cyan-400/20 rounded-lg">
-                PREVIEW PROCESSED
-              </button>
-
-              <button className="py-4 bg-black border border-cyan-400/20 rounded-lg">
-                DOWNLOAD VIDEO
-              </button>
-
-              <button
-                onClick={resetSession}
-                className="py-4 bg-red-500/80 rounded-lg shadow-[0_0_25px_red]"
-              >
-                CLEAR SESSION / RESET
-              </button>
-
+              </div>
             </div>
+
+            <button
+              onClick={resetSession}
+              className="w-full py-5 bg-red-500 rounded-xl 
+                         shadow-[0_0_25px_red]"
+            >
+              CLEAR SESSION / RESET
+            </button>
           </motion.div>
         )}
 
@@ -268,7 +246,7 @@ export default function BallTrackingApp() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/80 flex items-center justify-center 
-                       text-3xl text-cyan-400 animate-pulse"
+                       text-3xl text-cyan-400"
           >
             Hawk-Eye Analysis Processing...
           </motion.div>
