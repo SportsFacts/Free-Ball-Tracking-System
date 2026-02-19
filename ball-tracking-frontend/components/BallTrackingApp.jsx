@@ -59,7 +59,7 @@ export default function BallTrackingApp() {
                          rounded-xl text-green-400 shadow-[0_0_25px_green]
                          hover:scale-105 transition pointer-events-auto"
             >
-              ▶ START BALL TRACKING
+               START BALL TRACKING
             </button>
           </motion.div>
         )}
@@ -178,7 +178,7 @@ export default function BallTrackingApp() {
               onClick={analyzeDelivery}
               className="w-full py-4 bg-cyan-400 text-black rounded-lg font-bold"
             >
-              ▶ ANALYZE DELIVERY
+               ANALYZE DELIVERY
             </button>
           </motion.div>
         )}
@@ -203,7 +203,7 @@ export default function BallTrackingApp() {
                  py-16 text-center mb-16"
     >
       <div className="text-gray-500 tracking-widest text-sm mb-4">
-        HAWK-EYE VERDICT
+        BALL TRACKING VERDICT
       </div>
 
       <div className="text-8xl font-bold text-green-400 
@@ -218,19 +218,19 @@ export default function BallTrackingApp() {
       <button className="py-5 bg-black border border-cyan-400/30
                          rounded-xl shadow-[0_0_20px_#00ffff22]
                          hover:scale-[1.02] transition">
-        ▶ PREVIEW ORIGINAL
+         PREVIEW ORIGINAL
       </button>
 
       <button className="py-5 bg-black border border-cyan-400/30
                          rounded-xl shadow-[0_0_20px_#00ffff22]
                          hover:scale-[1.02] transition">
-        ▶ PREVIEW PROCESSED
+         PREVIEW PROCESSED
       </button>
 
       <button className="py-5 bg-black border border-cyan-400/30
                          rounded-xl shadow-[0_0_20px_#00ffff22]
                          hover:scale-[1.02] transition">
-        ⬇ DOWNLOAD VIDEO
+         DOWNLOAD VIDEO
       </button>
 
       <button
