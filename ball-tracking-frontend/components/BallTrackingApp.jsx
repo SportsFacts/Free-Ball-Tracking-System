@@ -114,29 +114,59 @@ export default function BallTrackingApp() {
         )}
 
         {/* UPLOAD */}
-        {step === "upload" && (
-          <motion.div
-            key="upload"
-            variants={screen}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="max-w-5xl mx-auto p-10 relative z-10"
-          >
-            <div className="bg-[#050b18] border border-cyan-400/20 rounded-2xl p-12">
-              <h2 className="text-2xl text-cyan-400 mb-6">
-                Upload Video ({ballColor?.toUpperCase()} BALL)
-              </h2>
+       <div className="w-full flex justify-center mt-10">
+  <div className="w-[1100px] bg-gradient-to-b from-[#0f172a] to-[#020617] 
+                  rounded-2xl border border-cyan-500/10 
+                  shadow-[0_0_40px_rgba(0,255,255,0.08)] 
+                  p-8">
 
-              <input
-                type="file"
-                accept="video/*"
-                onChange={() => setStep("decision")}
-                className="block w-full text-white"
-              />
-            </div>
-          </motion.div>
-        )}
+    {/* Header */}
+    <div className="flex items-center gap-3 mb-6">
+      <div className="text-cyan-400 text-xl">📹</div>
+      <h2 className="text-cyan-400 text-lg font-semibold tracking-wide">
+        Upload Video
+      </h2>
+    </div>
+
+    {/* Drop Zone */}
+    <div className="relative rounded-xl border-2 border-dashed 
+                    border-cyan-400/20 bg-black/40 
+                    h-[260px] flex flex-col items-center 
+                    justify-center text-center">
+
+      {/* Glow Overlay */}
+      <div className="absolute inset-0 rounded-xl 
+                      bg-gradient-to-b from-cyan-500/5 to-transparent" />
+
+
+      {/* Main Text */}
+      <p className="text-gray-200 text-lg z-10">
+        Drop your video here or click to browse
+      </p>
+
+      {/* Subtext */}
+      <p className="text-gray-500 text-sm mt-2 z-10">
+        Supports MP4, MOV, AVI formats
+      </p>
+
+      {/* Hidden Input */}
+      <input
+        type="file"
+        accept="video/*"
+        className="absolute inset-0 opacity-0 cursor-pointer"
+        onChange={handleVideoUpload}
+      />
+    </div>
+
+    {/* Footer Text */}
+    <div className="text-center mt-6">
+      <p className="text-gray-600 text-sm tracking-wide">
+        Free Ball Tracking System
+      </p>
+    </div>
+
+  </div>
+</div>
 
         {/* DECISION */}
         {step === "decision" && (
