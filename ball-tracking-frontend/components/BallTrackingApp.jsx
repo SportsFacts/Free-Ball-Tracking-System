@@ -201,57 +201,58 @@ export default function BallTrackingApp() {
           </motion.div>
         )}
 
-        {/* RESULTS */}
-        {step === "results" && (
-          <motion.div
-            key="results"
-            variants={screen}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            transition={{ duration: 0.4 }}
-            className="max-w-6xl mx-auto p-10 space-y-10"
-          >
-            <div className="bg-[#050b18] border border-cyan-400/30 
-                            rounded-xl p-12 text-center 
-                            shadow-[0_0_40px_#00ffff33]">
+       {/* RESULTS */}
+{step === "results" && (
+  <motion.div
+    key="results"
+    variants={screen}
+    initial="hidden"
+    animate="visible"
+    exit="exit"
+    transition={{ duration: 0.4 }}
+    className="max-w-6xl mx-auto p-10 space-y-10"
+  >
+    <div className="bg-[#050b18] border border-cyan-400/30 
+                    rounded-xl p-12 text-center 
+                    shadow-[0_0_40px_#00ffff33]">
 
-              <div className="text-sm text-gray-500 mb-3">
-                HAWK-EYE VERDICT
-              </div>
+      <div className="text-sm text-gray-500 mb-3">
+        HAWK-EYE VERDICT
+      </div>
 
-              <div className="text-6xl font-bold text-green-400 
-                              drop-shadow-[0_0_25px_green]">
-                OUT
-              </div>
-            </div>
-
-            <button
-              onClick={resetSession}
-              className="w-full py-5 bg-red-500 rounded-xl 
-                         shadow-[0_0_25px_red]"
-            >
-              CLEAR SESSION / RESET
-            </button>
-          </motion.div>
-        )}
-
-      </AnimatePresence>
-
-      {/* PROCESSING OVERLAY */}
-      <AnimatePresence>
-        {processing && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center 
-                       text-3xl text-cyan-400"
-          >
-            Hawk-Eye Analysis Processing...
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="text-6xl font-bold text-green-400 
+                      drop-shadow-[0_0_25px_green]">
+        OUT
+      </div>
     </div>
-  );
+
+    {/* CONTROL PANEL */}
+    <div className="grid grid-cols-2 gap-4">
+
+      <button className="py-4 bg-black border border-cyan-400/20 
+                         rounded-lg hover:border-cyan-400 transition">
+        ▶ PREVIEW ORIGINAL
+      </button>
+
+      <button className="py-4 bg-black border border-cyan-400/20 
+                         rounded-lg hover:border-cyan-400 transition">
+        ▶ PREVIEW PROCESSED
+      </button>
+
+      <button className="py-4 bg-black border border-cyan-400/20 
+                         rounded-lg hover:border-cyan-400 transition">
+        ⬇ DOWNLOAD VIDEO
+      </button>
+
+      <button
+        onClick={resetSession}
+        className="py-4 bg-red-500/80 rounded-lg 
+                   shadow-[0_0_25px_red] hover:scale-[1.02] transition"
+      >
+        CLEAR SESSION / RESET
+      </button>
+
+    </div>
+  </motion.div>
+)
 }
