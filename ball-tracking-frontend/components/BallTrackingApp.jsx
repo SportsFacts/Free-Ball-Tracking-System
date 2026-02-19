@@ -183,27 +183,68 @@ export default function BallTrackingApp() {
           </motion.div>
         )}
 
-        {/* RESULTS */}
-        {step === "results" && (
-          <motion.div
-            key="results"
-            variants={screen}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="max-w-5xl mx-auto p-10 text-center relative z-10"
-          >
-            <h3 className="text-gray-400 mb-2">HAWK-EYE VERDICT</h3>
-            <div className="text-6xl font-bold text-green-400 mb-10">OUT</div>
+       {/* RESULTS */}
+{step === "results" && (
+  <motion.div
+    key="results"
+    variants={screen}
+    initial="hidden"
+    animate="visible"
+    exit="exit"
+    className="min-h-screen flex flex-col items-center justify-center 
+               relative z-10 px-6"
+  >
 
-            <button
-              onClick={resetSession}
-              className="py-4 px-10 bg-red-500 rounded-lg shadow-[0_0_25px_red]"
-            >
-              CLEAR SESSION / RESET
-            </button>
-          </motion.div>
-        )}
+    {/* BIG VERDICT PANEL */}
+    <div
+      className="w-full max-w-6xl bg-[#050b18] 
+                 border border-cyan-400/30 rounded-2xl
+                 shadow-[0_0_60px_#00ffff33]
+                 py-16 text-center mb-16"
+    >
+      <div className="text-gray-500 tracking-widest text-sm mb-4">
+        HAWK-EYE VERDICT
+      </div>
+
+      <div className="text-8xl font-bold text-green-400 
+                      drop-shadow-[0_0_35px_green]">
+        OUT
+      </div>
+    </div>
+
+    {/* BUTTON GRID */}
+    <div className="w-full max-w-6xl grid grid-cols-2 gap-6">
+
+      <button className="py-5 bg-black border border-cyan-400/30
+                         rounded-xl shadow-[0_0_20px_#00ffff22]
+                         hover:scale-[1.02] transition">
+        ▶ PREVIEW ORIGINAL
+      </button>
+
+      <button className="py-5 bg-black border border-cyan-400/30
+                         rounded-xl shadow-[0_0_20px_#00ffff22]
+                         hover:scale-[1.02] transition">
+        ▶ PREVIEW PROCESSED
+      </button>
+
+      <button className="py-5 bg-black border border-cyan-400/30
+                         rounded-xl shadow-[0_0_20px_#00ffff22]
+                         hover:scale-[1.02] transition">
+        ⬇ DOWNLOAD VIDEO
+      </button>
+
+      <button
+        onClick={resetSession}
+        className="py-5 bg-red-500/90 rounded-xl
+                   shadow-[0_0_35px_red]
+                   hover:scale-[1.02] transition"
+      >
+        CLEAR SESSION / RESET
+      </button>
+
+    </div>
+  </motion.div>
+)}
 
       </AnimatePresence>
 
