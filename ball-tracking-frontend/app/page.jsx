@@ -7,135 +7,143 @@ export default function BallTrackingApp() {
   const [ballColor, setBallColor] = useState(null);
   const [videoFile, setVideoFile] = useState(null);
 
-  const handleColorSelect = (color) => {
-    setBallColor(color);
-    setScreen("upload");
-  };
+  const handleVideoUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const handleVideoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setVideoFile(file);
-      setScreen("tracking");
-    }
+    console.log("Uploaded:", file);
+    setVideoFile(file);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#020617] text-white">
-      <div className="w-full max-w-2xl p-10 rounded-2xl bg-gradient-to-br from-[#020617] to-[#0f172a] border border-cyan-500/10">
+    <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center">
 
-        {/* INTRO SCREEN */}
-        {screen === "intro" && (
-          <div className="text-center">
-            <h1 className="text-5xl font-bold text-cyan-400 mb-6">
-              Ball Tracking System
-            </h1>
+      {/* INTRO SCREEN */}
+      {screen === "intro" && (
+        <div className="text-center">
+          <h1 className="text-5xl font-bold text-cyan-400 mb-6">
+            Ball Tracking System
+          </h1>
 
-            <button
-              onClick={() => setScreen("color")}
-              className="px-8 py-4 bg-cyan-500 hover:bg-cyan-400
-                         text-black font-semibold rounded-xl transition"
-            >
-              Start Ball Tracking
-            </button>
+          <button
+            onClick={() => setScreen("color")}
+            className="px-8 py-4 bg-cyan-500 hover:bg-cyan-400
+                       text-black font-semibold rounded-xl
+                       shadow-lg transition"
+          >
+            Start Ball Tracking
+          </button>
+        </div>
+      )}
+
+      {/* BALL COLOR SELECTION */}
+      {screen === "color" && (
+        <div className="w-[500px] bg-[#0f172a] rounded-2xl p-8 border border-cyan-500/10">
+
+          <h2 className="text-2xl text-cyan-400 mb-6 text-center">
+            Select Ball Colour
+          </h2>
+
+          <div className="flex justify-center gap-6 mb-8">
+
+            {["red", "white"].map((color) => (
+              <button
+                key={color}
+                onClick={() => setBallColor(color)}
+                className={`w-24 h-24 rounded-full border-4 transition
+                  ${ballColor === color
+                    ? "border-cyan-400 scale-110"
+                    : "border-gray-600 hover:border-cyan-400"
+                  }
+                  ${color === "red" ? "bg-red-600" : "bg-gray-200"}
+                `}
+              />
+            ))}
+
           </div>
-        )}
 
-        {/* COLOR SELECTION */}
-        {screen === "color" && (
-          <div className="text-center">
-            <h2 className="text-3xl text-cyan-400 mb-8">
-              Select Ball Colour
-            </h2>
+          <button
+            disabled={!ballColor}
+            onClick={() => setScreen("upload")}
+            className={`w-full py-3 rounded-xl font-semibold transition
+              ${ballColor
+                ? "bg-cyan-500 hover:bg-cyan-400 text-black"
+                : "bg-gray-700 text-gray-400 cursor-not-allowed"
+              }
+            `}
+          >
+            Continue
+          </button>
+        </div>
+      )}
 
-            <div className="flex justify-center gap-6">
-              {["red", "white"].map((color) => (
-                <button
-                  key={color}
-                  onClick={() => handleColorSelect(color)}
-                  className="px-6 py-3 bg-[#0f172a] hover:bg-cyan-500/10
-                             border border-cyan-500/20 rounded-xl transition"
-                >
-                  {color.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+      {/* VIDEO UPLOAD */}
+      {screen === "upload" && (
+        <div className="w-[700px] bg-[#0f172a] rounded-2xl p-8 border border-cyan-500/10">
 
-        {/* VIDEO UPLOAD */}
-        {screen === "upload" && (
-          <div className="text-center">
-            <h2 className="text-3xl text-cyan-400 mb-6">
-              Upload Delivery Video
-            </h2>
+          <h2 className="text-2xl text-cyan-400 mb-6">
+            Upload Video
+          </h2>
+
+          <div className="relative border-2 border-dashed border-cyan-400/20
+                          rounded-xl h-[260px] flex flex-col items-center
+                          justify-center text-center bg-black/40">
+
+            <div className="text-5xl mb-4">⬆️</div>
+
+            <p className="text-gray-200 text-lg">
+              Drop your video here or click to browse
+            </p>
+
+            <p className="text-gray-500 text-sm mt-2">
+              Supports MP4, MOV, AVI
+            </p>
 
             <input
               type="file"
               accept="video/*"
               onChange={handleVideoUpload}
-              className="block w-full text-sm text-gray-400
-                         file:mr-4 file:py-3 file:px-6
-                         file:rounded-xl file:border-0
-                         file:bg-cyan-500 file:text-black
-                         hover:file:bg-cyan-400"
+              className="absolute inset-0 opacity-0 cursor-pointer"
             />
           </div>
-        )}
 
-        {/* TRACKING SCREEN */}
-        {screen === "tracking" && (
-          <div className="text-center">
-            <h2 className="text-3xl text-cyan-400 mb-4">
-              Tracking Initialized
-            </h2>
-
-            <p className="text-gray-400">
-              Ball Colour: {ballColor}
-            </p>
-
-            <p className="text-gray-400 mb-6">
-              Video: {videoFile?.name}
-            </p>
-
-            <button
-              onClick={() => setScreen("results")}
-              className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400
-                         text-black font-semibold rounded-xl transition"
-            >
-              View Results
-            </button>
-          </div>
-        )}
-
-        {/* RESULTS SCREEN */}
-        {screen === "results" && (
-          <div className="text-center">
-            <h2 className="text-4xl text-cyan-400 mb-6">
-              Tracking Results
-            </h2>
-
-            <div className="bg-[#0f172a] p-6 rounded-xl border border-cyan-500/10">
-              <p className="text-gray-300">✔ Ball Detection Complete</p>
-              <p className="text-gray-300">✔ Trajectory Calculated</p>
-              <p className="text-gray-300">✔ Impact Point Estimated</p>
+          {videoFile && (
+            <div className="mt-6 text-green-400">
+              ✅ {videoFile.name}
             </div>
+          )}
 
-            <button
-              onClick={() => {
-                setScreen("intro");
-                setBallColor(null);
-                setVideoFile(null);
-              }}
-              className="mt-6 px-6 py-3 bg-cyan-500 hover:bg-cyan-400
-                         text-black font-semibold rounded-xl transition"
-            >
-              Start New Tracking
-            </button>
-          </div>
-        )}
+          <button
+            disabled={!videoFile}
+            onClick={() => setScreen("tracking")}
+            className={`mt-6 w-full py-3 rounded-xl font-semibold transition
+              ${videoFile
+                ? "bg-cyan-500 hover:bg-cyan-400 text-black"
+                : "bg-gray-700 text-gray-400 cursor-not-allowed"
+              }
+            `}
+          >
+            Start Tracking
+          </button>
+        </div>
+      )}
 
-      </div>
+      {/* TRACKING SCREEN */}
+      {screen === "tracking" && (
+        <div className="text-center">
+          <h2 className="text-3xl text-cyan-400 mb-4">
+            Tracking Initialized
+          </h2>
+
+          <p className="text-gray-400">
+            Ball Colour: {ballColor}
+          </p>
+
+          <p className="text-gray-400">
+            Video: {videoFile?.name}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
