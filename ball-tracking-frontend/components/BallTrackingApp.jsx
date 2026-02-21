@@ -8,6 +8,8 @@ export default function BallTrackingApp() {
   const [videoFile, setVideoFile] = useState(null);
   const [verdict, setVerdict] = useState(null);
 
+  const API_URL = "https://sportsfacts-freeballtrackingsystem.hf.space/track";
+
   const handleColorSelect = (color) => {
     setBallColor(color);
     setScreen("upload");
@@ -21,29 +23,32 @@ export default function BallTrackingApp() {
   };
 
   const startTracking = async () => {
-    if (!videoFile || !ballColor) return;
+    if (!videoFile || !ballColor) {
+      alert("Select ball colour and upload video");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("video", videoFile);
     formData.append("ballColor", ballColor);
 
+    setScreen("processing");
+
     try {
-      setScreen("processing");
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: formData,
+      });
 
-      const response = await fetch(
-        "https://sportsfacts-freeballtrackingsystem.hf.space/track",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (!response.ok) throw new Error("Server error");
+      if (!response.ok) {
+        throw new Error("Backend error");
+      }
 
       const data = await response.json();
 
       setVerdict(data.verdict);
       setScreen("results");
+
     } catch (error) {
       console.error(error);
       alert("Backend connection failed");
@@ -53,7 +58,7 @@ export default function BallTrackingApp() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#020617] text-white">
-      <div className="w-full max-w-2xl p-10 rounded-2xl bg-gradient-to-br from-[#020617] to-[#0f172a] border border-cyan-500/10">
+      <div className="w-full max-w-3xl p-10 rounded-2xl bg-gradient-to-br from-[#020617] to-[#0f172a] border border-cyan-500/10">
 
         {/* INTRO */}
         {screen === "intro" && (
@@ -105,7 +110,7 @@ export default function BallTrackingApp() {
               type="file"
               accept="video/*"
               onChange={handleVideoUpload}
-              className="block w-full text-sm text-gray-400
+              className="block w-full text-sm text-gray-400 mb-6
                          file:mr-4 file:py-3 file:px-6
                          file:rounded-xl file:border-0
                          file:bg-cyan-500 file:text-black
@@ -113,20 +118,15 @@ export default function BallTrackingApp() {
             />
 
             {videoFile && (
-              <p className="mt-4 text-green-400">
+              <p className="text-green-400 mb-4">
                 ✔ {videoFile.name}
               </p>
             )}
 
             <button
-              disabled={!videoFile}
               onClick={startTracking}
-              className={`mt-6 w-full py-3 rounded-xl font-semibold transition
-                ${videoFile
-                  ? "bg-cyan-500 hover:bg-cyan-400 text-black"
-                  : "bg-gray-700 text-gray-400 cursor-not-allowed"
-                }
-              `}
+              className="px-8 py-3 bg-cyan-500 hover:bg-cyan-400
+                         text-black font-semibold rounded-xl transition"
             >
               Start Tracking
             </button>
@@ -149,24 +149,28 @@ export default function BallTrackingApp() {
         {/* RESULTS */}
         {screen === "results" && (
           <div className="text-center">
+
             <h2 className="text-4xl text-cyan-400 mb-6">
-              HAWK-EYE VERDICT
+              Hawk-Eye Verdict
             </h2>
 
-            <div className="text-6xl font-bold text-green-400">
-              {verdict}
+            <div className="bg-[#0f172a] p-10 rounded-xl border border-cyan-500/10 mb-6">
+              <p className="text-6xl font-bold text-cyan-400">
+                {verdict}
+              </p>
             </div>
 
             <button
               onClick={() => {
-                setVideoFile(null);
-                setBallColor(null);
-                setVerdict(null);
                 setScreen("intro");
+                setBallColor(null);
+                setVideoFile(null);
+                setVerdict(null);
               }}
-              className="mt-8 px-8 py-3 bg-red-500 text-white rounded-xl"
+              className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400
+                         text-black font-semibold rounded-xl transition"
             >
-              Clear Session / Reset
+              Start New Tracking
             </button>
           </div>
         )}
