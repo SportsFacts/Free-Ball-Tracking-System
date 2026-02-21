@@ -1,3 +1,5 @@
-export default function Test() {
-  return <h1 style={{color:"white"}}>PAGE.JSX IS ACTIVE</h1>;
+import BallTrackingApp from "../components/BallTrackingApp";
+
+export default function Page() {
+  return <BallTrackingApp />;
 }
