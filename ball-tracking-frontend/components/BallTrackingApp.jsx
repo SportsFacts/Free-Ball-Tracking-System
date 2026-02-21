@@ -6,23 +6,63 @@ export default function BallTrackingApp() {
   const [screen, setScreen] = useState("intro");
   const [ballColor, setBallColor] = useState(null);
   const [videoFile, setVideoFile] = useState(null);
+  const [verdict, setVerdict] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleVideoUpload = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // ✅ File size guard (HF safety)
+    if (file.size > 50 * 1024 * 1024) {
+      alert("Video too large (Max 50MB)");
+      return;
+    }
+
     setVideoFile(file);
   };
 
-  const resetSession = () => {
-    setScreen("intro");
-    setBallColor(null);
-    setVideoFile(null);
+  const startTracking = async () => {
+    if (!videoFile || !ballColor) return;
+
+    const formData = new FormData();
+    formData.append("video", videoFile);
+    formData.append("ballColor", ballColor);
+
+    try {
+      setLoading(true);
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+
+      const res = await fetch(
+        "https://your-space-name.hf.space/track",   // ✅ CHANGE THIS
+        {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeout);
+
+      const data = await res.json();
+
+      setVerdict(data.verdict || "NO RESULT");
+      setScreen("results");
+
+    } catch (err) {
+      console.error(err);
+      alert("Backend connection failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center">
 
-      {/* INTRO SCREEN */}
+      {/* INTRO */}
       {screen === "intro" && (
         <div className="text-center">
           <h1 className="text-5xl font-bold text-cyan-400 mb-6">
@@ -32,18 +72,16 @@ export default function BallTrackingApp() {
           <button
             onClick={() => setScreen("color")}
             className="px-8 py-4 bg-cyan-500 hover:bg-cyan-400
-                       text-black font-semibold rounded-xl
-                       shadow-lg transition"
+                       text-black font-semibold rounded-xl"
           >
             Start Ball Tracking
           </button>
         </div>
       )}
 
-      {/* BALL COLOR SELECTION */}
+      {/* COLOR */}
       {screen === "color" && (
-        <div className="w-[500px] bg-[#0f172a] rounded-2xl p-8 border border-cyan-500/10">
-
+        <div className="w-[500px] bg-[#0f172a] rounded-2xl p-8">
           <h2 className="text-2xl text-cyan-400 mb-6 text-center">
             Select Ball Colour
           </h2>
@@ -53,10 +91,10 @@ export default function BallTrackingApp() {
               <button
                 key={color}
                 onClick={() => setBallColor(color)}
-                className={`w-24 h-24 rounded-full border-4 transition
+                className={`w-24 h-24 rounded-full border-4
                   ${ballColor === color
                     ? "border-cyan-400 scale-110"
-                    : "border-gray-600 hover:border-cyan-400"
+                    : "border-gray-600"
                   }
                   ${color === "red" ? "bg-red-600" : "bg-gray-200"}
                 `}
@@ -67,10 +105,10 @@ export default function BallTrackingApp() {
           <button
             disabled={!ballColor}
             onClick={() => setScreen("upload")}
-            className={`w-full py-3 rounded-xl font-semibold transition
+            className={`w-full py-3 rounded-xl font-semibold
               ${ballColor
-                ? "bg-cyan-500 hover:bg-cyan-400 text-black"
-                : "bg-gray-700 text-gray-400 cursor-not-allowed"
+                ? "bg-cyan-500 text-black"
+                : "bg-gray-700 text-gray-400"
               }
             `}
           >
@@ -79,10 +117,9 @@ export default function BallTrackingApp() {
         </div>
       )}
 
-      {/* VIDEO UPLOAD */}
+      {/* UPLOAD */}
       {screen === "upload" && (
-        <div className="w-[700px] bg-[#0f172a] rounded-2xl p-8 border border-cyan-500/10">
-
+        <div className="w-[700px] bg-[#0f172a] rounded-2xl p-8">
           <h2 className="text-2xl text-cyan-400 mb-6">
             Upload Video
           </h2>
@@ -95,10 +132,6 @@ export default function BallTrackingApp() {
 
             <p className="text-gray-200 text-lg">
               Drop your video here or click to browse
-            </p>
-
-            <p className="text-gray-500 text-sm mt-2">
-              Supports MP4, MOV, AVI
             </p>
 
             <input
@@ -117,11 +150,11 @@ export default function BallTrackingApp() {
 
           <button
             disabled={!videoFile}
-            onClick={() => setScreen("results")}
-            className={`mt-6 w-full py-3 rounded-xl font-semibold transition
+            onClick={startTracking}
+            className={`mt-6 w-full py-3 rounded-xl font-semibold
               ${videoFile
-                ? "bg-cyan-500 hover:bg-cyan-400 text-black"
-                : "bg-gray-700 text-gray-400 cursor-not-allowed"
+                ? "bg-cyan-500 text-black"
+                : "bg-gray-700 text-gray-400"
               }
             `}
           >
@@ -130,49 +163,40 @@ export default function BallTrackingApp() {
         </div>
       )}
 
-      {/* RESULTS SCREEN */}
+      {/* LOADING */}
+      {loading && (
+        <div className="text-center">
+          <h2 className="text-3xl text-cyan-400 mb-4">
+            Processing Delivery...
+          </h2>
+          <p className="text-gray-400 animate-pulse">
+            Running ball tracking engine on cloud
+          </p>
+        </div>
+      )}
+
+      {/* RESULTS */}
       {screen === "results" && (
-        <div className="w-[1100px] bg-black/40 border border-cyan-400/20
-                        rounded-2xl p-10">
+        <div className="text-center">
+          <h2 className="text-4xl text-cyan-400 mb-6">
+            HAWK-EYE VERDICT
+          </h2>
 
-          <h1 className="text-cyan-400 text-3xl mb-8">
-            ANALYSIS RESULTS
-          </h1>
-
-          <div className="flex justify-center mb-10">
-            <div className="border border-cyan-400/30 rounded-xl
-                            px-24 py-10 text-center bg-[#020617]">
-
-              <p className="text-cyan-400 tracking-widest text-sm mb-3">
-                HAWK-EYE VERDICT
-              </p>
-
-              <h2 className="text-6xl text-emerald-400 font-bold">
-                OUT
-              </h2>
-            </div>
+          <div className="text-6xl text-green-400 mb-6">
+            {verdict}
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <button className="py-4 border border-cyan-400/30 rounded-xl hover:bg-cyan-500/10">
-              PREVIEW ORIGINAL
-            </button>
-
-            <button className="py-4 border border-cyan-400/30 rounded-xl hover:bg-cyan-500/10">
-              PREVIEW PROCESSED
-            </button>
-
-            <button className="py-4 border border-cyan-400/30 rounded-xl hover:bg-cyan-500/10">
-              DOWNLOAD VIDEO
-            </button>
-
-            <button
-              onClick={resetSession}
-              className="py-4 bg-red-400 text-black font-semibold rounded-xl hover:bg-red-300"
-            >
-              CLEAR SESSION / RESET
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              setScreen("intro");
+              setVideoFile(null);
+              setBallColor(null);
+              setVerdict(null);
+            }}
+            className="px-6 py-3 bg-cyan-500 text-black rounded-xl"
+          >
+            Start New Tracking
+          </button>
         </div>
       )}
     </div>
