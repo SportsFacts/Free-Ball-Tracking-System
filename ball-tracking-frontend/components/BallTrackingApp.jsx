@@ -10,17 +10,19 @@ export default function BallTrackingApp() {
   const handleVideoUpload = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     setVideoFile(file);
+  };
 
-    /* ✅ DIRECTLY GO TO RESULTS */
-    setScreen("results");
+  const resetSession = () => {
+    setScreen("intro");
+    setBallColor(null);
+    setVideoFile(null);
   };
 
   return (
     <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center">
 
-      {/* INTRO */}
+      {/* INTRO SCREEN */}
       {screen === "intro" && (
         <div className="text-center">
           <h1 className="text-5xl font-bold text-cyan-400 mb-6">
@@ -30,16 +32,18 @@ export default function BallTrackingApp() {
           <button
             onClick={() => setScreen("color")}
             className="px-8 py-4 bg-cyan-500 hover:bg-cyan-400
-                       text-black font-semibold rounded-xl transition"
+                       text-black font-semibold rounded-xl
+                       shadow-lg transition"
           >
             Start Ball Tracking
           </button>
         </div>
       )}
 
-      {/* COLOR SELECTION */}
+      {/* BALL COLOR SELECTION */}
       {screen === "color" && (
         <div className="w-[500px] bg-[#0f172a] rounded-2xl p-8 border border-cyan-500/10">
+
           <h2 className="text-2xl text-cyan-400 mb-6 text-center">
             Select Ball Colour
           </h2>
@@ -52,7 +56,8 @@ export default function BallTrackingApp() {
                 className={`w-24 h-24 rounded-full border-4 transition
                   ${ballColor === color
                     ? "border-cyan-400 scale-110"
-                    : "border-gray-600 hover:border-cyan-400"}
+                    : "border-gray-600 hover:border-cyan-400"
+                  }
                   ${color === "red" ? "bg-red-600" : "bg-gray-200"}
                 `}
               />
@@ -65,7 +70,8 @@ export default function BallTrackingApp() {
             className={`w-full py-3 rounded-xl font-semibold transition
               ${ballColor
                 ? "bg-cyan-500 hover:bg-cyan-400 text-black"
-                : "bg-gray-700 text-gray-400 cursor-not-allowed"}
+                : "bg-gray-700 text-gray-400 cursor-not-allowed"
+              }
             `}
           >
             Continue
@@ -76,6 +82,7 @@ export default function BallTrackingApp() {
       {/* VIDEO UPLOAD */}
       {screen === "upload" && (
         <div className="w-[700px] bg-[#0f172a] rounded-2xl p-8 border border-cyan-500/10">
+
           <h2 className="text-2xl text-cyan-400 mb-6">
             Upload Video
           </h2>
@@ -90,6 +97,10 @@ export default function BallTrackingApp() {
               Drop your video here or click to browse
             </p>
 
+            <p className="text-gray-500 text-sm mt-2">
+              Supports MP4, MOV, AVI
+            </p>
+
             <input
               type="file"
               accept="video/*"
@@ -97,59 +108,73 @@ export default function BallTrackingApp() {
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
           </div>
+
+          {videoFile && (
+            <div className="mt-6 text-green-400">
+              ✅ {videoFile.name}
+            </div>
+          )}
+
+          <button
+            disabled={!videoFile}
+            onClick={() => setScreen("results")}
+            className={`mt-6 w-full py-3 rounded-xl font-semibold transition
+              ${videoFile
+                ? "bg-cyan-500 hover:bg-cyan-400 text-black"
+                : "bg-gray-700 text-gray-400 cursor-not-allowed"
+              }
+            `}
+          >
+            Start Tracking
+          </button>
         </div>
       )}
 
-      {/* RESULTS */}
+      {/* RESULTS SCREEN */}
       {screen === "results" && (
-        <div className="w-[900px] bg-gradient-to-br from-black to-[#020617]
-                        border border-cyan-400/20 rounded-2xl p-10">
+        <div className="w-[1100px] bg-black/40 border border-cyan-400/20
+                        rounded-2xl p-10">
 
-          <h2 className="text-cyan-400 text-3xl mb-10">
+          <h1 className="text-cyan-400 text-3xl mb-8">
             ANALYSIS RESULTS
-          </h2>
+          </h1>
 
-          <div className="text-center mb-10">
-            <div className="inline-block px-20 py-10 rounded-xl
-                            border border-cyan-400/30 bg-black/60">
+          <div className="flex justify-center mb-10">
+            <div className="border border-cyan-400/30 rounded-xl
+                            px-24 py-10 text-center bg-[#020617]">
 
-              <p className="text-cyan-400 tracking-widest mb-4">
+              <p className="text-cyan-400 tracking-widest text-sm mb-3">
                 HAWK-EYE VERDICT
               </p>
 
-              <p className="text-6xl text-green-400 font-bold">
+              <h2 className="text-6xl text-emerald-400 font-bold">
                 OUT
-              </p>
+              </h2>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-            <button className="py-4 border border-cyan-400/30 rounded-xl">
+            <button className="py-4 border border-cyan-400/30 rounded-xl hover:bg-cyan-500/10">
               PREVIEW ORIGINAL
             </button>
 
-            <button className="py-4 border border-cyan-400/30 rounded-xl">
+            <button className="py-4 border border-cyan-400/30 rounded-xl hover:bg-cyan-500/10">
               PREVIEW PROCESSED
             </button>
 
-            <button className="py-4 border border-cyan-400/30 rounded-xl">
+            <button className="py-4 border border-cyan-400/30 rounded-xl hover:bg-cyan-500/10">
               DOWNLOAD VIDEO
             </button>
 
             <button
-              onClick={() => {
-                setScreen("intro");
-                setBallColor(null);
-                setVideoFile(null);
-              }}
-              className="py-4 bg-red-400 text-black rounded-xl"
+              onClick={resetSession}
+              className="py-4 bg-red-400 text-black font-semibold rounded-xl hover:bg-red-300"
             >
               CLEAR SESSION / RESET
             </button>
           </div>
         </div>
       )}
-
     </div>
   );
 }
