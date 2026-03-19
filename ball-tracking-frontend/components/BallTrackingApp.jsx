@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 export default function BallTrackingApp() {
   const [step, setStep] = useState("intro"); // intro, colour, upload, results
@@ -12,6 +12,14 @@ export default function BallTrackingApp() {
   const [processedVideo, setProcessedVideo] = useState(null);
   const [verdict, setVerdict] = useState("");
 
+  // Cleanup object URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      if (processedVideo) URL.revokeObjectURL(processedVideo);
+    };
+  }, [previewUrl, processedVideo]);
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -22,6 +30,7 @@ export default function BallTrackingApp() {
 
   const startAnalysis = async () => {
     setLoading(true);
+    
     const formData = new FormData();
     formData.append("file", selectedFile);
     formData.append("ballColor", ballColor);
@@ -32,20 +41,38 @@ export default function BallTrackingApp() {
         method: "POST",
         body: formData,
       });
+
+      if (!res.ok) throw new Error("Backend connection failed.");
+
+      // 1. Convert video response to a playable Blob URL
       const videoBlob = await res.blob();
-      setVerdict(res.headers.get("X-Verdict") || "NOT OUT");
       setProcessedVideo(URL.createObjectURL(videoBlob));
+
+      // 2. Read the final verdict from the custom HTTP Header
+      const backendVerdict = res.headers.get("X-Verdict");
+      setVerdict(backendVerdict || "NOT OUT");
+      
       setStep("results");
     } catch (err) {
-      alert("Analysis failed. Please check backend connection.");
+      console.error(err);
+      alert("Analysis failed. Please check if the Hugging Face backend is running.");
     } finally {
       setLoading(false);
     }
   };
 
+  const resetSession = () => {
+    setStep("intro");
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setProcessedVideo(null);
+    setUmpireDecision(null);
+    setVerdict("");
+  };
+
   return (
     <div className="min-h-screen bg-[#050a0f] text-cyan-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Visual Background Elements */}
+      {/* Visual Background Element */}
       <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(circle_at_center,_#00f2ff_0%,_transparent_70%)]"></div>
 
       {/* 1. INTRO SCREEN */}
@@ -159,19 +186,19 @@ export default function BallTrackingApp() {
           
           <div className="bg-[#0b141d]/90 border-2 border-cyan-500/50 p-16 rounded-[40px] mb-10 relative overflow-hidden shadow-[0_0_50px_rgba(0,242,255,0.1)]">
             <div className="absolute top-6 left-1/2 -translate-x-1/2 text-[10px] text-cyan-700 font-black tracking-[1em]">HAWK-EYE VERDICT</div>
-            <div className={`text-[10rem] leading-none font-black italic tracking-tighter ${verdict === 'OUT' ? 'text-red-500 drop-shadow-[0_0_30px_#ef4444]' : 'text-emerald-500 drop-shadow-[0_0_30px_#10b981]'}`}>
+            <div className={`text-[10rem] leading-none text-center font-black italic tracking-tighter ${verdict === 'OUT' ? 'text-red-500 drop-shadow-[0_0_30px_#ef4444]' : 'text-emerald-500 drop-shadow-[0_0_30px_#10b981]'}`}>
               {verdict}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-6 mb-6">
-             <button onClick={() => window.open(previewUrl)} className="py-5 bg-[#0b141d] border border-cyan-900/50 rounded-xl font-black text-xs tracking-widest hover:border-cyan-400 transition">PREVIEW ORIGINAL</button>
-             <button onClick={() => window.open(processedVideo)} className="py-5 bg-[#0b141d] border border-cyan-900/50 rounded-xl font-black text-xs tracking-widest hover:border-cyan-400 transition">PREVIEW PROCESSED</button>
+             <button onClick={() => window.open(previewUrl)} className="py-5 bg-[#0b141d] border border-cyan-900/50 rounded-xl font-black text-xs tracking-widest hover:border-cyan-400 transition text-white">PREVIEW ORIGINAL</button>
+             <button onClick={() => window.open(processedVideo)} className="py-5 bg-[#0b141d] border border-cyan-900/50 rounded-xl font-black text-xs tracking-widest hover:border-cyan-400 transition text-white">PREVIEW PROCESSED</button>
           </div>
           <div className="grid grid-cols-2 gap-6">
-             <a href={processedVideo} download="ball_tracking_result.mp4" className="py-5 bg-[#0b141d] border border-cyan-900/50 rounded-xl font-black text-xs tracking-widest hover:border-cyan-400 text-center transition">DOWNLOAD VIDEO</a>
+             <a href={processedVideo} download="ball_tracking_result.mp4" className="py-5 bg-[#0b141d] border border-cyan-900/50 rounded-xl font-black text-xs tracking-widest hover:border-cyan-400 text-center transition text-white block">DOWNLOAD VIDEO</a>
              <button 
-                onClick={() => window.location.reload()} 
+                onClick={resetSession} 
                 className="py-5 bg-red-500/10 border border-red-500/30 rounded-xl font-black text-xs tracking-widest text-red-500 hover:bg-red-500 hover:text-white transition"
              >
                 CLEAR SESSION / RESET
