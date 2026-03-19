@@ -11,121 +11,128 @@ export default function BallTrackingApp() {
   const [loading, setLoading] = useState(false);
   const [processedVideo, setProcessedVideo] = useState(null);
   const [verdict, setVerdict] = useState("");
-  const [activeView, setActiveView] = useState("processed"); // Toggle for preview buttons
+  const [activeView, setActiveView] = useState("processed");
 
-  // URL for your Hugging Face Space
+  // CHANGE THIS TO YOUR EXACT SPACE URL:
+  // Format: https://{username}-{spacename}.hf.space/analyze
   const BACKEND_URL = "https://sportsfacts-freeballtrackingsystem.hf.space/analyze";
 
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      if (processedVideo) URL.revokeObjectURL(processedVideo);
-    };
-  }, [previewUrl, processedVideo]);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-    }
-  };
-
   const startAnalysis = async () => {
+    if (!selectedFile) return;
     setLoading(true);
+    
     const formData = new FormData();
     formData.append("file", selectedFile);
     formData.append("ballColor", ballColor);
     formData.append("umpireDecision", umpireDecision);
 
     try {
-      const res = await fetch(BACKEND_URL, { method: "POST", body: formData });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
 
-      if (!res.ok) throw new Error("Connection failed");
+      const res = await fetch(BACKEND_URL, {
+        method: "POST",
+        body: formData,
+        mode: "cors", // Explicitly set CORS mode
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || "Server Error");
+      }
 
       const videoBlob = await res.blob();
       setProcessedVideo(URL.createObjectURL(videoBlob));
-      setVerdict(res.headers.get("X-Verdict") || "NOT OUT");
+      
+      // Get the verdict from custom header
+      const v = res.headers.get("X-Verdict");
+      setVerdict(v || "NOT OUT");
+      
       setStep("results");
       setActiveView("processed");
     } catch (err) {
-      alert("Analysis failed. Ensure the Hugging Face space is Public and Running.");
+      console.error("Connection Error:", err);
+      alert("CONNECTION FAILED: " + err.message + ". Check if the Hugging Face Space is Public and Running.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleFile = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setStep("umpire"); // Move to umpire decision screen
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#050a0f] text-cyan-50 flex flex-col items-center justify-center p-6 font-sans">
+    <div className="min-h-screen bg-[#050a0f] text-white flex flex-col items-center justify-center p-4">
       
+      {/* INTRO */}
       {step === "intro" && (
-        <div className="text-center animate-in fade-in zoom-in duration-500">
-          <h1 className="text-6xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">FREE BALL TRACKING</h1>
-          <button onClick={() => setStep("colour")} className="mt-8 px-12 py-4 bg-emerald-500/10 border-2 border-emerald-500 text-emerald-400 font-bold rounded-full hover:bg-emerald-500 hover:text-black transition-all">START TRACKING</button>
+        <div className="text-center">
+          <h1 className="text-5xl font-black text-cyan-400 mb-8">FREE BALL TRACKING</h1>
+          <button onClick={() => setStep("colour")} className="bg-emerald-500 px-10 py-4 rounded-lg font-bold text-black">START TRACKING</button>
         </div>
       )}
 
+      {/* BALL COLOUR */}
       {step === "colour" && (
-        <div className="bg-[#0b141d] border border-cyan-500/20 p-10 rounded-3xl max-w-lg w-full text-center">
-          <h2 className="text-2xl font-bold mb-8 text-cyan-400">SELECT BALL COLOR</h2>
-          <div className="grid grid-cols-2 gap-6 mb-8">
-            <div onClick={() => setBallColor("red")} className={`p-6 rounded-xl border-2 cursor-pointer transition ${ballColor === 'red' ? 'border-red-600 bg-red-600/10' : 'border-gray-800'}`}>
-              <div className="w-10 h-10 bg-red-600 rounded-full mx-auto mb-3 shadow-[0_0_15px_red]"></div>
-              <p className="font-bold text-xs uppercase tracking-widest">Red Ball</p>
-            </div>
-            <div onClick={() => setBallColor("white")} className={`p-6 rounded-xl border-2 cursor-pointer transition ${ballColor === 'white' ? 'border-white bg-white/10' : 'border-gray-800'}`}>
-              <div className="w-10 h-10 bg-slate-100 rounded-full mx-auto mb-3 shadow-[0_0_15px_white]"></div>
-              <p className="font-bold text-xs uppercase tracking-widest">White Ball</p>
-            </div>
+        <div className="bg-[#0b141d] p-10 rounded-3xl border border-cyan-500/20 text-center w-full max-w-md">
+          <h2 className="text-xl font-bold mb-6">SELECT BALL COLOR</h2>
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <button onClick={() => setBallColor("red")} className={`p-4 rounded-xl border-2 ${ballColor === 'red' ? 'border-red-500' : 'border-gray-800'}`}>RED</button>
+            <button onClick={() => setBallColor("white")} className={`p-4 rounded-xl border-2 ${ballColor === 'white' ? 'border-white' : 'border-gray-800'}`}>WHITE</button>
           </div>
-          <button onClick={() => setStep("upload")} className="w-full py-4 bg-cyan-500 text-black font-black rounded-xl hover:bg-cyan-400 transition">CONTINUE</button>
+          <button onClick={() => setStep("upload")} className="w-full bg-cyan-500 py-3 rounded-lg text-black font-bold">NEXT</button>
         </div>
       )}
 
-      {step === "upload" && (
-        <div className="w-full max-w-3xl space-y-6">
+      {/* UPLOAD & UMPIRE */}
+      {(step === "upload" || step === "umpire") && (
+        <div className="w-full max-w-2xl bg-[#0b141d] p-6 rounded-3xl border border-cyan-500/20">
           {!selectedFile ? (
-            <label className="border-2 border-dashed border-cyan-500/30 rounded-3xl p-20 flex flex-col items-center cursor-pointer hover:bg-cyan-500/5 transition group">
-              <input type="file" className="hidden" accept="video/*" onChange={handleFileChange} />
-              <span className="text-4xl group-hover:-translate-y-2 transition-transform">📁</span>
-              <p className="mt-4 font-bold text-cyan-700">UPLOAD VIDEO CLIP</p>
+            <label className="border-2 border-dashed border-gray-700 p-20 flex flex-col items-center cursor-pointer">
+              <input type="file" className="hidden" onChange={handleFile} />
+              <p>Click to Upload Video</p>
             </label>
           ) : (
-            <div className="bg-[#0b141d] p-6 rounded-3xl border border-cyan-500/20 space-y-6">
-              <video src={previewUrl} controls className="w-full rounded-xl shadow-2xl" />
+            <div className="space-y-4">
+              <video src={previewUrl} controls className="w-full rounded-lg" />
               <div className="grid grid-cols-2 gap-4">
-                <button onClick={() => setUmpireDecision("OUT")} className={`py-4 rounded-xl font-bold border-2 transition ${umpireDecision === 'OUT' ? 'border-red-500 bg-red-500/10 text-red-500' : 'border-gray-800 text-gray-500'}`}>OUT</button>
-                <button onClick={() => setUmpireDecision("NOT OUT")} className={`py-4 rounded-xl font-bold border-2 transition ${umpireDecision === 'NOT OUT' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-gray-800 text-gray-500'}`}>NOT OUT</button>
+                <button onClick={() => setUmpireDecision("OUT")} className={`p-4 rounded-xl border-2 ${umpireDecision === 'OUT' ? 'border-red-500 text-red-500' : 'border-gray-800'}`}>OUT</button>
+                <button onClick={() => setUmpireDecision("NOT OUT")} className={`p-4 rounded-xl border-2 ${umpireDecision === 'NOT OUT' ? 'border-emerald-500 text-emerald-500' : 'border-gray-800'}`}>NOT OUT</button>
               </div>
-              <button disabled={!umpireDecision || loading} onClick={startAnalysis} className="w-full py-5 bg-cyan-500 text-black font-black text-xl rounded-xl disabled:opacity-20 shadow-lg shadow-cyan-500/20">
-                {loading ? "ANALYZING TRAJECTORY..." : "RUN ANALYSIS"}
+              <button disabled={loading || !umpireDecision} onClick={startAnalysis} className="w-full bg-cyan-500 py-4 rounded-xl text-black font-bold uppercase tracking-widest">
+                {loading ? "PROCESSING..." : "ANALYZE DELIVERY"}
               </button>
             </div>
           )}
         </div>
       )}
 
+      {/* RESULTS */}
       {step === "results" && (
-        <div className="w-full max-w-4xl space-y-6 animate-in fade-in duration-700">
-          <div className="relative rounded-3xl overflow-hidden border-2 border-cyan-500/50 shadow-2xl">
+        <div className="w-full max-w-4xl space-y-6">
+          <div className="relative border-2 border-cyan-500 rounded-2xl overflow-hidden">
             <video key={activeView} src={activeView === "processed" ? processedVideo : previewUrl} autoPlay controls className="w-full" />
-            <div className="absolute top-4 left-4 bg-black/80 px-4 py-1 rounded-full text-[10px] font-black tracking-widest border border-cyan-500/30 text-cyan-400">
-              {activeView.toUpperCase()} VIEW
-            </div>
+            <div className="absolute top-2 left-2 bg-black/60 px-3 py-1 rounded text-[10px] uppercase">{activeView} VIEW</div>
           </div>
 
-          <div className="bg-[#0b141d] border-2 border-cyan-500/50 p-10 rounded-[30px] text-center">
-            <p className="text-[10px] font-black tracking-[0.5em] text-cyan-800 mb-2 uppercase">Decision Support System</p>
-            <div className={`text-9xl font-black italic italic tracking-tighter ${verdict === 'OUT' ? 'text-red-500' : 'text-emerald-500'}`}>
-              {verdict}
-            </div>
+          <div className="bg-[#0b141d] border-2 border-cyan-500 p-8 rounded-3xl text-center">
+             <div className={`text-8xl font-black italic ${verdict === 'OUT' ? 'text-red-500' : 'text-emerald-500'}`}>{verdict}</div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <button onClick={() => setActiveView("original")} className={`py-4 rounded-xl font-black text-[10px] border tracking-widest transition ${activeView === 'original' ? 'bg-cyan-500 text-black border-cyan-500' : 'border-gray-800 text-gray-500'}`}>VIEW ORIGINAL</button>
-            <button onClick={() => setActiveView("processed")} className={`py-4 rounded-xl font-black text-[10px] border tracking-widest transition ${activeView === 'processed' ? 'bg-cyan-500 text-black border-cyan-500' : 'border-gray-800 text-gray-500'}`}>VIEW PROCESSED</button>
-            <a href={processedVideo} download="HawkEye_Result.mp4" className="py-4 bg-[#0b141d] border border-cyan-900 rounded-xl font-black text-[10px] tracking-widest text-center">DOWNLOAD VIDEO</a>
-            <button onClick={() => window.location.reload()} className="py-4 bg-red-500/10 border border-red-500/40 rounded-xl font-black text-[10px] tracking-widest text-red-500">NEW ANALYSIS</button>
+            <button onClick={() => setActiveView("original")} className="p-4 border border-cyan-900 rounded-xl text-xs font-bold">PREVIEW ORIGINAL</button>
+            <button onClick={() => setActiveView("processed")} className="p-4 border border-cyan-900 rounded-xl text-xs font-bold">PREVIEW PROCESSED</button>
+            <a href={processedVideo} download className="p-4 bg-cyan-900 rounded-xl text-xs font-bold text-center">DOWNLOAD VIDEO</a>
+            <button onClick={() => window.location.reload()} className="p-4 bg-red-900/20 text-red-500 rounded-xl text-xs font-bold">RESET</button>
           </div>
         </div>
       )}
