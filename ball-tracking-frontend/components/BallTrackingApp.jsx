@@ -1,157 +1,188 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function BallTrackingApp() {
-  const [step, setStep] = useState("intro");
-  const [ballColor, setBallColor] = useState("white");
+  const [step, setStep] = useState("intro"); // intro, colour, upload, results
+  const [ballColor, setBallColor] = useState("red");
   const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [umpireDecision, setUmpireDecision] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [videoUrl, setVideoUrl] = useState(null); // NEW: To store the processed video URL
+  const [processedVideo, setProcessedVideo] = useState(null);
+  const [verdict, setVerdict] = useState("");
 
-  // Cleanup memory when component closes
-  useEffect(() => {
-    return () => {
-      if (videoUrl) URL.revokeObjectURL(videoUrl);
-    };
-  }, [videoUrl]);
-
-  const startTracking = async () => {
-    if (!selectedFile) {
-      alert("Please upload a video first");
-      return;
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
     }
+  };
 
+  const startAnalysis = async () => {
+    setLoading(true);
     const formData = new FormData();
-    formData.append("file", selectedFile); // Backend expects "file"
+    formData.append("file", selectedFile);
+    formData.append("ballColor", ballColor);
+    formData.append("umpireDecision", umpireDecision);
 
     try {
-      setLoading(true);
+      const res = await fetch("https://sportsfacts-freeballtrackingsystem.hf.space/analyze", {
+        method: "POST",
+        body: formData,
+      });
+      const videoBlob = await res.blob();
+      setVerdict(res.headers.get("X-Verdict") || "NOT OUT");
+      setProcessedVideo(URL.createObjectURL(videoBlob));
       setStep("results");
-
-      const response = await fetch(
-        "https://sportsfacts-freeballtrackingsystem.hf.space/analyze",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (!response.ok) throw new Error("Processing failed");
-
-      // --- NEW: Convert video stream to a Blob URL ---
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      setVideoUrl(url);
-      
-    } catch (error) {
-      console.error(error);
-      alert("Error connecting to AI Backend. Is the Space awake?");
-      setStep("upload");
+    } catch (err) {
+      alert("Analysis failed. Please check backend connection.");
     } finally {
       setLoading(false);
     }
   };
 
-  const resetSession = () => {
-    if (videoUrl) URL.revokeObjectURL(videoUrl);
-    setStep("intro");
-    setVideoUrl(null);
-    setSelectedFile(null);
-  };
-
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 font-sans">
-      
-      {/* INTRO SCREEN */}
+    <div className="min-h-screen bg-[#050a0f] text-cyan-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Visual Background Elements */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(circle_at_center,_#00f2ff_0%,_transparent_70%)]"></div>
+
+      {/* 1. INTRO SCREEN */}
       {step === "intro" && (
-        <div className="text-center space-y-6">
-          <h1 className="text-4xl font-bold text-yellow-500">Free Ball Tracking</h1>
-          <p className="text-gray-400">Professional AI LBW analysis at your fingertips.</p>
+        <div className="text-center z-10 animate-in fade-in zoom-in duration-500">
+          <h1 className="text-6xl font-black tracking-tighter mb-4 text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 to-cyan-600">
+            FREE BALL TRACKING
+          </h1>
+          <p className="text-cyan-500 font-bold tracking-[0.3em] mb-12 uppercase">Professional LBW Decision Review Technology</p>
           <button 
-            className="px-8 py-3 bg-yellow-600 hover:bg-yellow-500 rounded-full font-bold transition"
             onClick={() => setStep("colour")}
+            className="group relative px-10 py-4 bg-emerald-500/10 border-2 border-emerald-500 rounded-lg transition-all hover:bg-emerald-500 hover:shadow-[0_0_30px_#10b981]"
           >
-            Start Analysis
+            <span className="relative z-10 text-emerald-400 group-hover:text-black font-black flex items-center gap-3">
+              <span className="text-2xl">▷</span> START BALL TRACKING
+            </span>
           </button>
         </div>
       )}
 
-      {/* COLOUR SCREEN */}
+      {/* 2. BALL COLOR SELECTION */}
       {step === "colour" && (
-        <div className="text-center space-y-6">
-          <h2 className="text-2xl font-semibold">Select Ball Colour</h2>
-          <div className="flex gap-4">
-            <button 
-              className={`px-6 py-2 rounded-lg border-2 ${ballColor === 'white' ? 'border-yellow-500 bg-white text-black' : 'border-gray-600'}`}
-              onClick={() => setBallColor("white")}
-            >
-              White Ball
-            </button>
-            <button 
-              className={`px-6 py-2 rounded-lg border-2 ${ballColor === 'red' ? 'border-yellow-500 bg-red-600' : 'border-gray-600'}`}
+        <div className="bg-[#0b141d]/80 backdrop-blur-xl border border-cyan-500/30 p-12 rounded-3xl shadow-2xl text-center z-10 w-full max-w-xl">
+          <h2 className="text-3xl font-black mb-2 text-cyan-400 uppercase italic">Select Ball Color</h2>
+          <p className="text-gray-500 text-sm mb-10">Choose the type of cricket ball to track</p>
+          
+          <div className="grid grid-cols-2 gap-8 mb-10">
+            <div 
               onClick={() => setBallColor("red")}
+              className={`group p-8 rounded-2xl border-2 cursor-pointer transition-all ${ballColor === 'red' ? 'border-red-500 bg-red-500/10' : 'border-gray-800 bg-black/40'}`}
             >
-              Red Ball
-            </button>
-          </div>
-          <button className="text-yellow-500 underline block mx-auto" onClick={() => setStep("upload")}>
-            Continue
-          </button>
-        </div>
-      )}
-
-      {/* UPLOAD SCREEN */}
-      {step === "upload" && (
-        <div className="text-center space-y-6 max-w-md w-full border-2 border-dashed border-gray-700 p-10 rounded-xl">
-          <h2 className="text-2xl font-semibold">Upload Delivery</h2>
-          <input
-            type="file"
-            accept="video/*"
-            className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-600 file:text-white hover:file:bg-yellow-500 cursor-pointer"
-            onChange={(e) => setSelectedFile(e.target.files[0])}
-          />
-          {selectedFile && <p className="text-green-500 text-sm">Selected: {selectedFile.name}</p>}
-          <button 
-            className="w-full py-3 bg-yellow-600 rounded-lg font-bold disabled:opacity-50"
-            onClick={startTracking}
-            disabled={!selectedFile}
-          >
-            Run AI Tracking
-          </button>
-        </div>
-      )}
-
-      {/* RESULTS SCREEN */}
-      {step === "results" && (
-        <div className="text-center space-y-6 w-full max-w-3xl">
-          {loading ? (
-            <div className="animate-pulse space-y-4">
-              <h2 className="text-2xl text-yellow-500 font-bold">AI is Tracking the Ball...</h2>
-              <div className="h-64 bg-gray-900 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500 italic">Computing trajectory, impact, and stumps...</p>
-              </div>
+              <div className={`w-16 h-16 rounded-full mx-auto mb-4 transition ${ballColor === 'red' ? 'bg-red-600 shadow-[0_0_25px_#dc2626]' : 'bg-red-900/40'}`}></div>
+              <span className={`font-black block tracking-widest ${ballColor === 'red' ? 'text-red-500' : 'text-gray-600'}`}>RED BALL</span>
+              <span className="text-[10px] text-gray-500 mt-1 block">Test Cricket</span>
             </div>
-          ) : (
-            <>
-              <h2 className="text-3xl font-bold">Hawk-Eye Verdict</h2>
-              <div className="relative rounded-xl overflow-hidden border-4 border-yellow-600 shadow-2xl">
-                {videoUrl ? (
-                  <video src={videoUrl} controls autoPlay className="w-full h-auto" />
-                ) : (
-                  <div className="p-10 bg-red-900/20 text-red-500">Failed to load video result.</div>
-                )}
-              </div>
-              <button 
-                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition"
-                onClick={resetSession}
-              >
-                New Analysis
-              </button>
-            </>
-          )}
+            
+            <div 
+              onClick={() => setBallColor("white")}
+              className={`group p-8 rounded-2xl border-2 cursor-pointer transition-all ${ballColor === 'white' ? 'border-cyan-400 bg-cyan-400/10' : 'border-gray-800 bg-black/40'}`}
+            >
+              <div className={`w-16 h-16 rounded-full mx-auto mb-4 transition ${ballColor === 'white' ? 'bg-slate-100 shadow-[0_0_25px_#f1f5f9]' : 'bg-slate-800/40'}`}></div>
+              <span className={`font-black block tracking-widest ${ballColor === 'white' ? 'text-white' : 'text-gray-600'}`}>WHITE BALL</span>
+              <span className="text-[10px] text-gray-500 mt-1 block">Limited Overs</span>
+            </div>
+          </div>
+          
+          <button onClick={() => setStep("upload")} className="w-full py-4 bg-cyan-600 hover:bg-cyan-500 text-black font-black rounded-xl transition shadow-lg shadow-cyan-900/20">CONTINUE</button>
         </div>
       )}
+
+      {/* 3 & 4. UPLOAD & PREVIEW SCREEN */}
+      {step === "upload" && (
+        <div className="w-full max-w-4xl z-10">
+          <div className="bg-[#0b141d]/90 border border-cyan-900/50 rounded-3xl p-8 shadow-2xl">
+            <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
+              <span className="text-cyan-400">📹</span> UPLOAD VIDEO
+            </h2>
+            
+            {!selectedFile ? (
+               <label className="border-2 border-dashed border-cyan-900/50 rounded-2xl p-24 flex flex-col items-center justify-center cursor-pointer hover:bg-cyan-500/5 transition group">
+                 <input type="file" className="hidden" accept="video/*" onChange={handleFileChange} />
+                 <div className="text-5xl mb-6 group-hover:-translate-y-2 transition-transform text-cyan-500">⬆</div>
+                 <p className="font-black text-xl tracking-tight">Drop your video here or click to browse</p>
+                 <p className="text-xs text-gray-500 mt-3 uppercase tracking-widest">Supports MP4, MOV, AVI formats</p>
+               </label>
+            ) : (
+              <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-900 shadow-2xl">
+                    <video src={previewUrl} controls className="w-full" />
+                </div>
+                
+                <div className="bg-black/60 p-8 rounded-2xl border border-cyan-900/30">
+                  <p className="text-xs font-black text-gray-500 mb-6 uppercase tracking-[0.3em]">Original Decision</p>
+                  <div className="grid grid-cols-2 gap-6">
+                    <button 
+                      onClick={() => setUmpireDecision("OUT")}
+                      className={`py-5 rounded-xl font-black border-2 transition-all ${umpireDecision === 'OUT' ? 'bg-red-500/20 border-red-500 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : 'border-gray-800 text-gray-600'}`}
+                    >
+                      ⓧ OUT
+                    </button>
+                    <button 
+                      onClick={() => setUmpireDecision("NOT OUT")}
+                      className={`py-5 rounded-xl font-black border-2 transition-all ${umpireDecision === 'NOT OUT' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'border-gray-800 text-gray-600'}`}
+                    >
+                      ✓ NOT OUT
+                    </button>
+                  </div>
+                </div>
+
+                <button 
+                  disabled={!umpireDecision || loading}
+                  onClick={startAnalysis}
+                  className="w-full py-5 bg-cyan-400 hover:bg-cyan-300 text-[#050a0f] font-black text-xl rounded-xl disabled:opacity-20 flex items-center justify-center gap-4 transition-all"
+                >
+                  {loading ? (
+                    <><span className="animate-spin text-2xl">🌀</span> PROCESSING VIDEO...</>
+                  ) : (
+                    <><span className="text-2xl">▶</span> ANALYZE DELIVERY</>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 5. ANALYSIS RESULTS */}
+      {step === "results" && (
+        <div className="w-full max-w-5xl z-10 animate-in fade-in duration-700">
+          <h2 className="text-cyan-500 font-black mb-6 text-left uppercase tracking-[0.5em] italic">Analysis Results</h2>
+          
+          <div className="bg-[#0b141d]/90 border-2 border-cyan-500/50 p-16 rounded-[40px] mb-10 relative overflow-hidden shadow-[0_0_50px_rgba(0,242,255,0.1)]">
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 text-[10px] text-cyan-700 font-black tracking-[1em]">HAWK-EYE VERDICT</div>
+            <div className={`text-[10rem] leading-none font-black italic tracking-tighter ${verdict === 'OUT' ? 'text-red-500 drop-shadow-[0_0_30px_#ef4444]' : 'text-emerald-500 drop-shadow-[0_0_30px_#10b981]'}`}>
+              {verdict}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 mb-6">
+             <button onClick={() => window.open(previewUrl)} className="py-5 bg-[#0b141d] border border-cyan-900/50 rounded-xl font-black text-xs tracking-widest hover:border-cyan-400 transition">PREVIEW ORIGINAL</button>
+             <button onClick={() => window.open(processedVideo)} className="py-5 bg-[#0b141d] border border-cyan-900/50 rounded-xl font-black text-xs tracking-widest hover:border-cyan-400 transition">PREVIEW PROCESSED</button>
+          </div>
+          <div className="grid grid-cols-2 gap-6">
+             <a href={processedVideo} download="ball_tracking_result.mp4" className="py-5 bg-[#0b141d] border border-cyan-900/50 rounded-xl font-black text-xs tracking-widest hover:border-cyan-400 text-center transition">DOWNLOAD VIDEO</a>
+             <button 
+                onClick={() => window.location.reload()} 
+                className="py-5 bg-red-500/10 border border-red-500/30 rounded-xl font-black text-xs tracking-widest text-red-500 hover:bg-red-500 hover:text-white transition"
+             >
+                CLEAR SESSION / RESET
+             </button>
+          </div>
+        </div>
+      )}
+      
+      <footer className="mt-12 text-[10px] text-gray-700 font-bold uppercase tracking-[0.4em] z-10">
+        Free Ball Tracking System • Powered by Computer Vision
+      </footer>
     </div>
   );
 }
