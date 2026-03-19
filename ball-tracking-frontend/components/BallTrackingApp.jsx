@@ -38,7 +38,7 @@ export default function BallTrackingApp() {
     formData.append("umpireDecision", umpireDecision);
 
     try {
-      const res = await fetch("https://sportsfacts-freeballtrackingsystem.hf.space/analyze", {
+      const res = await fetch("https://sportsfacts-freeballtrackingsystem.hf.space", {
         method: "POST",
         body: formData,
       });
