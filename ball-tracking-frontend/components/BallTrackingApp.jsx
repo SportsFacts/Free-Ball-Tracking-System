@@ -13,10 +13,10 @@ export default function BallTrackingApp() {
   const [verdict, setVerdict] = useState("");
   const [activeView, setActiveView] = useState("processed"); // Toggles between original/processed
 
-  // Update this to your EXACT Hugging Face direct space URL
+  // DIRECT API URL for your Hugging Face Space
   const BACKEND_URL = "https://sportsfacts-freeballtrackingsystem.hf.space/analyze";
 
-  // Cleanup Blob URLs to prevent memory leaks
+  // Cleanup Blob URLs to prevent memory leaks when component unmounts
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -44,17 +44,17 @@ export default function BallTrackingApp() {
       const res = await fetch(BACKEND_URL, {
         method: "POST",
         body: formData,
-        mode: "cors", // Explicitly handle Cross-Origin
+        mode: "cors", // Required for Cross-Origin requests
       });
 
-      if (!res.ok) throw new Error(`Server Error: ${res.status}`);
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
 
-      // 1. Get the Processed Video Blob
+      // 1. Convert the response to a Video Blob
       const videoBlob = await res.blob();
       const videoObjectUrl = URL.createObjectURL(videoBlob);
       setProcessedVideo(videoObjectUrl);
 
-      // 2. Extract the Final Verdict from custom HTTP Header
+      // 2. Extract the Final Verdict from the custom HTTP Header
       const backendVerdict = res.headers.get("X-Verdict");
       setVerdict(backendVerdict || "NOT OUT");
       
@@ -62,7 +62,7 @@ export default function BallTrackingApp() {
       setActiveView("processed");
     } catch (err) {
       console.error("Connection Error:", err);
-      alert("CONNECTION FAILED: Make sure your Hugging Face Space is Public and the app.py bridge is working.");
+      alert("CONNECTION FAILED: Check if your Hugging Face Space is PUBLIC and the status is GREEN (Running).");
     } finally {
       setLoading(false);
     }
@@ -111,7 +111,7 @@ export default function BallTrackingApp() {
         </div>
       )}
 
-      {/* 3. UPLOAD & DECISION */}
+      {/* 3. UPLOAD & FIELD UMPIRE CALL */}
       {(step === "upload" || step === "umpire") && (
         <div className="w-full max-w-3xl space-y-6 animate-in slide-in-from-bottom-4">
           {!selectedFile ? (
@@ -144,7 +144,7 @@ export default function BallTrackingApp() {
         </div>
       )}
 
-      {/* 4. RESULTS */}
+      {/* 4. ANALYSIS RESULTS */}
       {step === "results" && (
         <div className="w-full max-w-4xl space-y-6 animate-in fade-in duration-700">
           <div className="relative rounded-[32px] overflow-hidden border-2 border-cyan-500/50 shadow-[0_0_50px_rgba(0,242,255,0.15)]">
@@ -168,14 +168,24 @@ export default function BallTrackingApp() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <button onClick={() => setActiveView("original")} className={`py-4 rounded-xl font-black text-[10px] border tracking-widest transition ${activeView === 'original' ? 'bg-cyan-500 text-black border-cyan-500' : 'border-gray-800 text-gray-500 hover:text-white'}`}>PREVIEW ORIGINAL</button>
-            <button onClick={() => setActiveView("processed")} className={`py-4 rounded-xl font-black text-[10px] border tracking-widest transition ${activeView === 'processed' ? 'bg-cyan-500 text-black border-cyan-500' : 'border-gray-800 text-gray-500 hover:text-white'}`}>PREVIEW PROCESSED</button>
+            <button 
+              onClick={() => setActiveView("original")} 
+              className={`py-4 rounded-xl font-black text-[10px] border tracking-widest transition ${activeView === 'original' ? 'bg-cyan-500 text-black border-cyan-500' : 'border-gray-800 text-gray-500 hover:text-white'}`}
+            >
+              PREVIEW ORIGINAL
+            </button>
+            <button 
+              onClick={() => setActiveView("processed")} 
+              className={`py-4 rounded-xl font-black text-[10px] border tracking-widest transition ${activeView === 'processed' ? 'bg-cyan-500 text-black border-cyan-500' : 'border-gray-800 text-gray-500 hover:text-white'}`}
+            >
+              PREVIEW PROCESSED
+            </button>
             <a 
               href={processedVideo} 
               download="HawkEye_Result.mp4" 
               className="py-4 bg-[#0b141d] border border-cyan-900 rounded-xl font-black text-[10px] tracking-widest text-center hover:border-cyan-400 transition"
             >
-              DOWNLOAD VIDEO
+              DOWNLOAD RESULT
             </a>
             <button 
               onClick={() => window.location.reload()} 
