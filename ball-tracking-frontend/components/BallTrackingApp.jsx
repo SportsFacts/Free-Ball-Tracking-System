@@ -11,131 +11,185 @@ export default function BallTrackingApp() {
   const [loading, setLoading] = useState(false);
   const [processedVideo, setProcessedVideo] = useState(null);
   const [verdict, setVerdict] = useState("");
-  const [activeView, setActiveView] = useState("processed");
+  const [activeView, setActiveView] = useState("processed"); // Toggles between original/processed
 
-  // CHANGE THIS TO YOUR EXACT SPACE URL:
-  // Format: https://{username}-{spacename}.hf.space/analyze
+  // Update this to your EXACT Hugging Face direct space URL
   const BACKEND_URL = "https://sportsfacts-freeballtrackingsystem.hf.space/analyze";
 
+  // Cleanup Blob URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      if (processedVideo) URL.revokeObjectURL(processedVideo);
+    };
+  }, [previewUrl, processedVideo]);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setStep("umpire"); // Move to decision selection
+    }
+  };
+
   const startAnalysis = async () => {
-    if (!selectedFile) return;
     setLoading(true);
-    
     const formData = new FormData();
     formData.append("file", selectedFile);
     formData.append("ballColor", ballColor);
     formData.append("umpireDecision", umpireDecision);
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
-
       const res = await fetch(BACKEND_URL, {
         method: "POST",
         body: formData,
-        mode: "cors", // Explicitly set CORS mode
-        signal: controller.signal
+        mode: "cors", // Explicitly handle Cross-Origin
       });
 
-      clearTimeout(timeoutId);
+      if (!res.ok) throw new Error(`Server Error: ${res.status}`);
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || "Server Error");
-      }
-
+      // 1. Get the Processed Video Blob
       const videoBlob = await res.blob();
-      setProcessedVideo(URL.createObjectURL(videoBlob));
-      
-      // Get the verdict from custom header
-      const v = res.headers.get("X-Verdict");
-      setVerdict(v || "NOT OUT");
+      const videoObjectUrl = URL.createObjectURL(videoBlob);
+      setProcessedVideo(videoObjectUrl);
+
+      // 2. Extract the Final Verdict from custom HTTP Header
+      const backendVerdict = res.headers.get("X-Verdict");
+      setVerdict(backendVerdict || "NOT OUT");
       
       setStep("results");
       setActiveView("processed");
     } catch (err) {
       console.error("Connection Error:", err);
-      alert("CONNECTION FAILED: " + err.message + ". Check if the Hugging Face Space is Public and Running.");
+      alert("CONNECTION FAILED: Make sure your Hugging Face Space is Public and the app.py bridge is working.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFile = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      setStep("umpire"); // Move to umpire decision screen
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-[#050a0f] text-white flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-[#050a0f] text-white flex flex-col items-center justify-center p-6 font-sans">
       
-      {/* INTRO */}
+      {/* 1. INTRO SCREEN */}
       {step === "intro" && (
-        <div className="text-center">
-          <h1 className="text-5xl font-black text-cyan-400 mb-8">FREE BALL TRACKING</h1>
-          <button onClick={() => setStep("colour")} className="bg-emerald-500 px-10 py-4 rounded-lg font-bold text-black">START TRACKING</button>
+        <div className="text-center space-y-8 animate-in fade-in zoom-in duration-500">
+          <h1 className="text-6xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">
+            HAWK-EYE SYSTEM
+          </h1>
+          <p className="text-cyan-500 tracking-[0.3em] font-bold text-sm uppercase">Free Ball Tracking Technology</p>
+          <button 
+            onClick={() => setStep("colour")} 
+            className="px-12 py-4 bg-emerald-500/10 border-2 border-emerald-500 text-emerald-400 font-black rounded-full hover:bg-emerald-500 hover:text-black transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+          >
+            START ANALYSIS
+          </button>
         </div>
       )}
 
-      {/* BALL COLOUR */}
+      {/* 2. COLOR SELECTION */}
       {step === "colour" && (
-        <div className="bg-[#0b141d] p-10 rounded-3xl border border-cyan-500/20 text-center w-full max-w-md">
-          <h2 className="text-xl font-bold mb-6">SELECT BALL COLOR</h2>
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <button onClick={() => setBallColor("red")} className={`p-4 rounded-xl border-2 ${ballColor === 'red' ? 'border-red-500' : 'border-gray-800'}`}>RED</button>
-            <button onClick={() => setBallColor("white")} className={`p-4 rounded-xl border-2 ${ballColor === 'white' ? 'border-white' : 'border-gray-800'}`}>WHITE</button>
+        <div className="bg-[#0b141d] border border-cyan-500/20 p-10 rounded-3xl max-w-lg w-full text-center shadow-2xl">
+          <h2 className="text-2xl font-bold mb-8 text-cyan-400 italic">SELECT BALL TYPE</h2>
+          <div className="grid grid-cols-2 gap-6 mb-8">
+            <div 
+              onClick={() => setBallColor("red")} 
+              className={`p-6 rounded-2xl border-2 cursor-pointer transition ${ballColor === 'red' ? 'border-red-600 bg-red-600/10' : 'border-gray-800'}`}
+            >
+              <div className="w-12 h-12 bg-red-600 rounded-full mx-auto mb-3 shadow-[0_0_15px_red]"></div>
+              <p className="font-bold text-xs uppercase tracking-widest">Red Ball</p>
+            </div>
+            <div 
+              onClick={() => setBallColor("white")} 
+              className={`p-6 rounded-2xl border-2 cursor-pointer transition ${ballColor === 'white' ? 'border-white bg-white/10' : 'border-gray-800'}`}
+            >
+              <div className="w-12 h-12 bg-slate-100 rounded-full mx-auto mb-3 shadow-[0_0_15px_white]"></div>
+              <p className="font-bold text-xs uppercase tracking-widest">White Ball</p>
+            </div>
           </div>
-          <button onClick={() => setStep("upload")} className="w-full bg-cyan-500 py-3 rounded-lg text-black font-bold">NEXT</button>
+          <button onClick={() => setStep("upload")} className="w-full py-4 bg-cyan-500 text-black font-black rounded-xl hover:bg-cyan-400 transition shadow-lg shadow-cyan-500/20">CONTINUE</button>
         </div>
       )}
 
-      {/* UPLOAD & UMPIRE */}
+      {/* 3. UPLOAD & DECISION */}
       {(step === "upload" || step === "umpire") && (
-        <div className="w-full max-w-2xl bg-[#0b141d] p-6 rounded-3xl border border-cyan-500/20">
+        <div className="w-full max-w-3xl space-y-6 animate-in slide-in-from-bottom-4">
           {!selectedFile ? (
-            <label className="border-2 border-dashed border-gray-700 p-20 flex flex-col items-center cursor-pointer">
-              <input type="file" className="hidden" onChange={handleFile} />
-              <p>Click to Upload Video</p>
+            <label className="border-2 border-dashed border-cyan-500/30 rounded-[40px] p-24 flex flex-col items-center cursor-pointer hover:bg-cyan-500/5 transition group">
+              <input type="file" className="hidden" accept="video/*" onChange={handleFileChange} />
+              <span className="text-5xl group-hover:-translate-y-2 transition-transform mb-4">📹</span>
+              <p className="font-bold text-cyan-700 tracking-widest uppercase text-xs">Upload Delivery Clip</p>
             </label>
           ) : (
-            <div className="space-y-4">
-              <video src={previewUrl} controls className="w-full rounded-lg" />
-              <div className="grid grid-cols-2 gap-4">
-                <button onClick={() => setUmpireDecision("OUT")} className={`p-4 rounded-xl border-2 ${umpireDecision === 'OUT' ? 'border-red-500 text-red-500' : 'border-gray-800'}`}>OUT</button>
-                <button onClick={() => setUmpireDecision("NOT OUT")} className={`p-4 rounded-xl border-2 ${umpireDecision === 'NOT OUT' ? 'border-emerald-500 text-emerald-500' : 'border-gray-800'}`}>NOT OUT</button>
+            <div className="bg-[#0b141d] p-6 rounded-3xl border border-cyan-500/20 space-y-6 shadow-2xl">
+              <video src={previewUrl} controls className="w-full rounded-2xl border border-cyan-900" />
+              
+              <div className="bg-black/40 p-6 rounded-2xl border border-cyan-900/30">
+                <p className="text-[10px] font-bold text-gray-500 mb-4 uppercase tracking-[0.3em]">Field Umpire Call</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <button onClick={() => setUmpireDecision("OUT")} className={`py-4 rounded-xl font-bold border-2 transition ${umpireDecision === 'OUT' ? 'border-red-500 bg-red-500/10 text-red-500' : 'border-gray-800 text-gray-500'}`}>OUT</button>
+                  <button onClick={() => setUmpireDecision("NOT OUT")} className={`py-4 rounded-xl font-bold border-2 transition ${umpireDecision === 'NOT OUT' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-gray-800 text-gray-500'}`}>NOT OUT</button>
+                </div>
               </div>
-              <button disabled={loading || !umpireDecision} onClick={startAnalysis} className="w-full bg-cyan-500 py-4 rounded-xl text-black font-bold uppercase tracking-widest">
-                {loading ? "PROCESSING..." : "ANALYZE DELIVERY"}
+
+              <button 
+                disabled={!umpireDecision || loading} 
+                onClick={startAnalysis} 
+                className="w-full py-5 bg-cyan-500 text-black font-black text-xl rounded-2xl disabled:opacity-20 shadow-lg shadow-cyan-500/20 active:scale-95 transition"
+              >
+                {loading ? "ANALYZING TRAJECTORY..." : "RUN HAWK-EYE"}
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* RESULTS */}
+      {/* 4. RESULTS */}
       {step === "results" && (
-        <div className="w-full max-w-4xl space-y-6">
-          <div className="relative border-2 border-cyan-500 rounded-2xl overflow-hidden">
-            <video key={activeView} src={activeView === "processed" ? processedVideo : previewUrl} autoPlay controls className="w-full" />
-            <div className="absolute top-2 left-2 bg-black/60 px-3 py-1 rounded text-[10px] uppercase">{activeView} VIEW</div>
+        <div className="w-full max-w-4xl space-y-6 animate-in fade-in duration-700">
+          <div className="relative rounded-[32px] overflow-hidden border-2 border-cyan-500/50 shadow-[0_0_50px_rgba(0,242,255,0.15)]">
+            <video 
+              key={activeView} 
+              src={activeView === 'processed' ? processedVideo : previewUrl} 
+              autoPlay 
+              controls 
+              className="w-full" 
+            />
+            <div className="absolute top-6 left-6 bg-black/80 px-4 py-1 rounded-full text-[10px] font-black tracking-widest border border-cyan-500/30 text-cyan-400 uppercase">
+              {activeView} View
+            </div>
           </div>
 
-          <div className="bg-[#0b141d] border-2 border-cyan-500 p-8 rounded-3xl text-center">
-             <div className={`text-8xl font-black italic ${verdict === 'OUT' ? 'text-red-500' : 'text-emerald-500'}`}>{verdict}</div>
+          <div className="bg-[#0b141d] border-2 border-cyan-500/50 p-12 rounded-[40px] text-center shadow-2xl">
+            <p className="text-[10px] font-black tracking-[0.5em] text-cyan-800 mb-2 uppercase italic">Hawk-Eye Final Verdict</p>
+            <div className={`text-9xl font-black italic tracking-tighter ${verdict === 'OUT' ? 'text-red-500 drop-shadow-[0_0_20px_#ef4444]' : 'text-emerald-500 drop-shadow-[0_0_20px_#10b981]'}`}>
+              {verdict}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <button onClick={() => setActiveView("original")} className="p-4 border border-cyan-900 rounded-xl text-xs font-bold">PREVIEW ORIGINAL</button>
-            <button onClick={() => setActiveView("processed")} className="p-4 border border-cyan-900 rounded-xl text-xs font-bold">PREVIEW PROCESSED</button>
-            <a href={processedVideo} download className="p-4 bg-cyan-900 rounded-xl text-xs font-bold text-center">DOWNLOAD VIDEO</a>
-            <button onClick={() => window.location.reload()} className="p-4 bg-red-900/20 text-red-500 rounded-xl text-xs font-bold">RESET</button>
+            <button onClick={() => setActiveView("original")} className={`py-4 rounded-xl font-black text-[10px] border tracking-widest transition ${activeView === 'original' ? 'bg-cyan-500 text-black border-cyan-500' : 'border-gray-800 text-gray-500 hover:text-white'}`}>PREVIEW ORIGINAL</button>
+            <button onClick={() => setActiveView("processed")} className={`py-4 rounded-xl font-black text-[10px] border tracking-widest transition ${activeView === 'processed' ? 'bg-cyan-500 text-black border-cyan-500' : 'border-gray-800 text-gray-500 hover:text-white'}`}>PREVIEW PROCESSED</button>
+            <a 
+              href={processedVideo} 
+              download="HawkEye_Result.mp4" 
+              className="py-4 bg-[#0b141d] border border-cyan-900 rounded-xl font-black text-[10px] tracking-widest text-center hover:border-cyan-400 transition"
+            >
+              DOWNLOAD VIDEO
+            </a>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="py-4 bg-red-500/10 border border-red-500/40 rounded-xl font-black text-[10px] tracking-widest text-red-500 hover:bg-red-600 hover:text-white transition"
+            >
+              NEW ANALYSIS
+            </button>
           </div>
         </div>
       )}
+
+      <footer className="mt-12 text-[10px] text-gray-800 font-bold uppercase tracking-[0.5em]">
+        Hawk-Eye Decision Support System • {new Date().getFullYear()}
+      </footer>
     </div>
   );
 }
